@@ -1,0 +1,41 @@
+- hosts: all
+  become: true
+  become_user: root
+  tasks:
+    - name: install python and pip
+      apt:
+        pkg:
+          - python
+          - python-pip
+        update_cache: yes
+
+    - name: clone source code into /app
+      git:
+        repo: https://github.com/anfederico/Flaskex
+        dest: /app
+    
+    - name: create app user
+      user:
+        name: app
+        shell: /bin/bash
+    
+    - name: give /app directory to app user
+      file:
+        dest: /app
+        owner: app
+        group: app
+        recurse: yes
+        mode: u=rwX,g=rX,o=rX
+
+    - name: install python dependencies
+      pip:
+        requirements: /app/requirements.txt
+      become: true
+      become_user: app
+    
+    - name: launch app
+      shell:
+        cmd: nohup python /app/app.py > /app/log.txt 2>&1 &
+        chdir: /app
+      become: true
+      become_user: app
